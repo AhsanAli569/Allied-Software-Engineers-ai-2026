@@ -2,6 +2,18 @@
   command = "npm run build"
   publish = "dist"
 
+# Safety net: in a correctly configured deploy the frontend never actually requests a
+# relative /api/* path — VITE_API_URL makes every request absolute, straight to the Render
+# backend (see src/lib/api.js). If a relative /api/* request ever reaches Netlify anyway
+# (e.g. VITE_API_URL missing/misnamed again), this returns a real 404 instead of letting
+# the SPA catch-all below silently answer it with index.html — which previously masqueraded
+# as a 200 OK and broke JSON parsing in a very confusing way (conversations.filter crash).
+# This rule must stay above the catch-all — Netlify uses the first matching rule.
+[[redirects]]
+  from = "/api/*"
+  to = "/index.html"
+  status = 404
+
 # React Router uses client-side routing — without this, refreshing or directly opening a
 # URL like /chat/<id> would 404 (Netlify would look for a literal file at that path).
 [[redirects]]

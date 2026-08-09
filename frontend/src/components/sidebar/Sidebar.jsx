@@ -21,7 +21,11 @@ export default function Sidebar({
   const { user, logout } = useAuth()
   const [showArchived, setShowArchived] = useState(false)
 
-  const visible = conversations.filter((c) => (showArchived ? c.archived : !c.archived))
+  // Defensive: if the API ever returns something unexpected (a misconfigured backend URL
+  // returning HTML, a transient error, etc.), fail to an empty list instead of crashing
+  // the whole sidebar with "conversations.filter is not a function".
+  const conversationList = Array.isArray(conversations) ? conversations : []
+  const visible = conversationList.filter((c) => (showArchived ? c.archived : !c.archived))
 
   return (
     <>

@@ -71,9 +71,19 @@ python -m app.cli create-admin
 1. Add site → Import an existing project → connect this repo.
 2. **Base directory**: `frontend` (Netlify will pick up `frontend/netlify.toml` from here,
    which already sets the build command, publish directory, and the SPA redirect rule)
-3. **Environment variable**: `VITE_API_BASE_URL` = `https://ase-ai-backend.onrender.com/api/v1`
-   (your actual Render URL + `/api/v1`)
+3. **Environment variable**: `VITE_API_URL` = `https://ase-ai-backend.onrender.com` (your
+   actual Render URL — with or without a trailing `/api/v1`, `src/lib/api.js` normalizes
+   either form, so don't worry about getting that part exactly right)
 4. Deploy. Note the Netlify URL, e.g. `https://your-app.netlify.app`.
+
+   **Double-check the variable name is exactly `VITE_API_URL`.** Vite only exposes
+   `VITE_*`-prefixed env vars to the frontend, and it does so by exact name — a typo or a
+   different name (this has happened: `VITE_API_BASE_URL` was used in an earlier version of
+   this doc) means the app silently falls back to relative `/api/v1` paths, which Netlify's
+   own SPA routing then answers with `index.html` instead of JSON. `netlify.toml` now
+   returns a real 404 for that case instead of masking it, so if this regresses again the
+   symptom will be a clean network error instead of a confusing `.filter is not a function`
+   crash.
 
 ## 4. Close the loop: CORS
 
@@ -94,4 +104,4 @@ redeploy. Until this matches, the browser will block API requests from the Netli
 
 Both Netlify and Render support custom domains on free tiers. If you later point
 `ai.alliedsoftwareengineers.com` at Netlify and an API subdomain at Render, update
-`CORS_ORIGINS` and `VITE_API_BASE_URL` to match — nothing else changes.
+`CORS_ORIGINS` and `VITE_API_URL` to match — nothing else changes.

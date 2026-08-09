@@ -1,8 +1,17 @@
 // Relative by default — works via the Vite dev proxy locally and via nginx reverse-proxying
-// /api on a single-domain deployment (the VPS setup in docs/DEPLOYMENT.md). Set
-// VITE_API_BASE_URL at build time when the frontend and backend are on different domains
-// (e.g. Netlify + Render) — see docs/DEPLOYMENT_NETLIFY_RENDER.md.
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api/v1'
+// /api on a single-domain deployment (the VPS setup in docs/DEPLOYMENT.md). Set VITE_API_URL
+// at build time when the frontend and backend are on different domains (e.g. Netlify +
+// Render) — see docs/DEPLOYMENT_NETLIFY_RENDER.md. Accepts either the bare backend origin
+// (https://your-backend.onrender.com) or one that already includes /api/v1 — normalized
+// below so either form works and the suffix is never duplicated.
+function resolveApiBase() {
+  const configured = import.meta.env.VITE_API_URL
+  if (!configured) return '/api/v1'
+  const trimmed = configured.replace(/\/+$/, '')
+  return trimmed.endsWith('/api/v1') ? trimmed : `${trimmed}/api/v1`
+}
+
+const API_BASE = resolveApiBase()
 
 function readCookie(name) {
   const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`))
