@@ -1,4 +1,4 @@
-import { API_BASE, captureCsrfTokenFromResponse, getCsrfToken } from './api'
+import { API_BASE, api, captureCsrfTokenFromResponse, getCsrfToken } from './api'
 
 /**
  * Streams a Server-Sent-Events response from a POST endpoint. The browser's built-in
@@ -6,7 +6,8 @@ import { API_BASE, captureCsrfTokenFromResponse, getCsrfToken } from './api'
  * a regular fetch, which also gives us an AbortController-based cancel path for the
  * "stop generation" button.
  */
-export async function streamMessage(path, body, { onStart, onChunk, onDone, onError, signal } = {}) {
+export async function streamMessage(path, body, options = {}, _isRetry = false) {
+  const { onStart, onChunk, onDone, onError, signal } = options
   const headers = { 'Content-Type': 'application/json' }
   const csrfToken = getCsrfToken()
   if (csrfToken) headers['X-CSRF-Token'] = csrfToken
@@ -27,6 +28,25 @@ export async function streamMessage(path, body, { onStart, onChunk, onDone, onEr
   }
 
   captureCsrfTokenFromResponse(response)
+
+  if (response.status === 403 && !_isRetry) {
+    // Same stale-token-after-reload race the API client retries — refresh the CSRF token
+    // once and retry the stream, instead of failing the user's very first message.
+    let detail
+    try {
+      detail = (await response.clone().json())?.detail
+    } catch {
+      // non-JSON body — fall through and treat as a generic failure below
+    }
+    if (detail === 'CSRF validation failed') {
+      try {
+        await api.get('/auth/csrf')
+      } catch {
+        // not logged in, or the refresh itself failed — fall through to the generic error
+      }
+      if (getCsrfToken()) return streamMessage(path, body, options, true)
+    }
+  }
 
   if (!response.ok || !response.body) {
     onError?.('ASE AI is temporarily unable to answer. Please try again.')

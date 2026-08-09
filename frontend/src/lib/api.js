@@ -49,7 +49,7 @@ class ApiError extends Error {
  * Thin fetch wrapper: sends cookies, attaches the CSRF header (double-submit pattern) on
  * state-changing requests, and throws ApiError with the backend's friendly message on failure.
  */
-async function request(path, { method = 'GET', body, signal } = {}) {
+async function request(path, { method = 'GET', body, signal } = {}, _isRetry = false) {
   const headers = { 'Content-Type': 'application/json' }
   if (method !== 'GET' && method !== 'HEAD') {
     const csrfToken = getCsrfToken()
@@ -73,6 +73,18 @@ async function request(path, { method = 'GET', body, signal } = {}) {
 
   if (!response.ok) {
     const detail = isJson ? data.detail : data
+    // Right after a page reload, the in-memory CSRF token hasn't been repopulated yet
+    // (AuthContext does that in the background, best-effort) — acting immediately then
+    // surfaces as this exact 403. Refresh the token once and retry, instead of failing
+    // the user's very first action.
+    if (response.status === 403 && detail === 'CSRF validation failed' && !_isRetry) {
+      try {
+        await request('/auth/csrf', {}, true)
+      } catch {
+        // not logged in, or the refresh itself failed — fall through to the original error
+      }
+      if (getCsrfToken()) return request(path, { method, body, signal }, true)
+    }
     throw new ApiError(response.status, typeof detail === 'string' ? detail : 'Something went wrong')
   }
 
@@ -83,7 +95,7 @@ async function request(path, { method = 'GET', body, signal } = {}) {
  * Uploads a file with progress reporting (fetch has no reliable cross-browser upload
  * progress event, so this uses XMLHttpRequest instead).
  */
-function uploadFile(path, file, onProgress) {
+function uploadFile(path, file, onProgress, _isRetry = false) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest()
     xhr.open('POST', `${API_BASE}${path}`)
@@ -107,6 +119,14 @@ function uploadFile(path, file, onProgress) {
       }
       if (xhr.status >= 200 && xhr.status < 300) {
         resolve(data)
+      } else if (xhr.status === 403 && data?.detail === 'CSRF validation failed' && !_isRetry) {
+        // Same stale-token-after-reload race as request() below — refresh once and retry.
+        request('/auth/csrf', {}, true)
+          .catch(() => {})
+          .then(() => {
+            if (getCsrfToken()) uploadFile(path, file, onProgress, true).then(resolve, reject)
+            else reject(new ApiError(xhr.status, data?.detail || 'Upload failed'))
+          })
       } else {
         reject(new ApiError(xhr.status, data?.detail || 'Upload failed'))
       }
