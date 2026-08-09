@@ -1,0 +1,10 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# React Router uses client-side routing — without this, refreshing or directly opening a
+# URL like /chat/<id> would 404 (Netlify would look for a literal file at that path).
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

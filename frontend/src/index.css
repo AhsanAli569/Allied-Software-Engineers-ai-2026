@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* Allied Software Engineers brand palette */
+  --color-navy: #071a2b; /* main dark surface / sidebar */
+  --color-emerald-deep: #063f3a; /* sidebar hover / secondary dark surface */
+  --color-emerald: #0b6b5b; /* sidebar active item */
+  --color-mint: #2ee6a6; /* primary accent — buttons, links, focus */
+  --color-mint-dark: #22b884; /* mint hover/pressed state */
+  --color-aqua: #35c8e8; /* secondary accent */
+  --color-card: #f8fafc; /* soft white surfaces */
+  --color-ice: #eef3f6; /* light-mode page background */
+  --color-charcoal: #16232e; /* main text on light surfaces */
+  --color-muted: #64748b; /* secondary/muted text */
+  --color-success: #16a36a;
+  --color-warning: #f5a524;
+  --color-error: #e5484d;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-ice text-charcoal antialiased dark:bg-navy dark:text-slate-100;
+  margin: 0;
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+* {
+  scrollbar-width: thin;
+}
+
+.markdown-body pre {
+  @apply overflow-x-auto rounded-lg bg-navy p-3 text-sm text-slate-100 dark:bg-emerald-deep/40;
+}
+
+.markdown-body code {
+  @apply rounded bg-slate-100 px-1 py-0.5 text-[0.9em] dark:bg-white/10;
+}
+
+.markdown-body pre code {
+  @apply bg-transparent p-0;
+}
+
+.markdown-body table {
+  @apply w-full border-collapse text-sm;
+}
+
+.markdown-body th,
+.markdown-body td {
+  @apply border border-slate-300 px-2 py-1 dark:border-white/10;
+}
+
+.markdown-body a {
+  @apply text-emerald underline dark:text-mint;
+}
+
+.markdown-body p {
+  @apply my-2;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  @apply my-2 ps-6;
+}
+
+.markdown-body ul {
+  @apply list-disc;
+}
+
+.markdown-body ol {
+  @apply list-decimal;
+}
