@@ -88,8 +88,15 @@ python -m app.cli create-admin
 ## 4. Close the loop: CORS
 
 Go back to Render → your backend service → Environment → set `CORS_ORIGINS` to your real
-Netlify URL (e.g. `https://your-app.netlify.app` — no trailing slash), then trigger a
-redeploy. Until this matches, the browser will block API requests from the Netlify origin.
+frontend origin — e.g. `https://ai.alliedsoftwareengineers.com` if you're on a custom
+domain, or `https://your-app.netlify.app` otherwise. **Exact match, no trailing slash** —
+the browser's `Origin` header has to match this string exactly or CORS silently fails with
+no `Access-Control-Allow-Origin` header on the response (the preflight to `/auth/login` etc.
+just fails with no explanation in the Network tab). Then trigger a redeploy.
+
+If you'd rather use a variable named `FRONTEND_URL` instead (some teams prefer that name by
+convention), that also works — it's additive to `CORS_ORIGINS`, not a replacement, so either
+one (or both) gets picked up.
 
 ## 5. Verify
 

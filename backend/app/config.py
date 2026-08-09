@@ -10,6 +10,10 @@ class Settings(BaseSettings):
     environment: str = "development"
     debug: bool = True
     cors_origins: str = "http://localhost:3000"
+    # Alternate/additional way to specify the allowed frontend origin — some hosts (Render
+    # included) commonly use FRONTEND_URL by convention. If set, it's added to whatever
+    # CORS_ORIGINS already has rather than replacing it, so either name (or both) works.
+    frontend_url: str = ""
     # "lax" for same-origin deployments (a VPS behind one nginx, or local dev via the Vite
     # proxy). Set to "none" when the frontend and backend are on different domains (e.g.
     # Netlify + Render) — cross-site cookies require SameSite=None, and browsers require
@@ -38,7 +42,20 @@ class Settings(BaseSettings):
 
     @property
     def cors_origin_list(self) -> list[str]:
-        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+        raw_values = self.cors_origins.split(",")
+        if self.frontend_url:
+            raw_values.append(self.frontend_url)
+
+        origins: list[str] = []
+        for value in raw_values:
+            # Browsers send the Origin header with no trailing slash, so a stray trailing
+            # slash in the env var (e.g. "https://ai.alliedsoftwareengineers.com/") would
+            # otherwise never match and CORS would silently fail — the exact symptom this
+            # is guarding against.
+            origin = value.strip().rstrip("/")
+            if origin and origin not in origins:
+                origins.append(origin)
+        return origins
 
 
 @lru_cache
