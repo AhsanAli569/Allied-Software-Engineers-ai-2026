@@ -6,6 +6,7 @@ import { calculateAge, isDateInFuture, maxDateOfBirthForMinimumAge, MINIMUM_AGE 
 import Logo from '../components/ui/Logo'
 import Button from '../components/ui/Button'
 import Footer from '../components/ui/Footer'
+import CompanyInfo from '../components/ui/CompanyInfo'
 
 const initialForm = {
   full_name: '',
@@ -148,7 +149,9 @@ export default function RegisterPage() {
             </Link>
           </p>
         </form>
-        <Footer className="mt-6" />
+
+        <CompanyInfo className="mt-6" />
+        <Footer className="mt-4" />
       </div>
     </div>
   )

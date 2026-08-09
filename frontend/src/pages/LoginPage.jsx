@@ -5,6 +5,7 @@ import { ApiError } from '../lib/api'
 import Logo from '../components/ui/Logo'
 import Button from '../components/ui/Button'
 import Footer from '../components/ui/Footer'
+import CompanyInfo from '../components/ui/CompanyInfo'
 
 export default function LoginPage() {
   const { user, loading, login } = useAuth()
@@ -95,7 +96,9 @@ export default function LoginPage() {
           </p>
         </form>
 
-        <p className="mt-6 text-center text-xs text-muted">
+        <CompanyInfo className="mt-6" />
+
+        <p className="mt-4 text-center text-xs text-muted">
           ASE AI can make mistakes. Verify important information.
         </p>
         <Footer className="mt-2" />
