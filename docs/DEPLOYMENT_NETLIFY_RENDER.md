@@ -51,7 +51,9 @@ the service's Environment tab afterward.
    - `DATABASE_URL` = the Neon string from step 1
    - `ENVIRONMENT=production`, `DEBUG=false`
    - `JWT_SECRET` = generate one: `python -c "import secrets; print(secrets.token_urlsafe(64))"`
-   - `COOKIE_SAMESITE=none` (required — see limitations above)
+   - `COOKIE_SAMESITE` — leave unset. `ENVIRONMENT=production` alone now makes the backend
+     default cookies to `SameSite=None` automatically (needed since Netlify and Render are
+     different domains); only set this explicitly if you want to override that default.
    - `CORS_ORIGINS` = your Netlify URL (you'll know this after step 3 below; come back
      and set it, then redeploy)
    - `GEMINI_API_KEY` / `GROQ_API_KEY` / `OPENROUTER_API_KEY` = whichever you have
@@ -102,10 +104,12 @@ one (or both) gets picked up.
 
 - `curl https://ase-ai-backend.onrender.com/api/v1/health` → `{"status":"ok"}`
 - Open your Netlify URL, register an account, send a message.
-- If login seems to silently fail: open browser dev tools → Network tab → check the
-  register/login response actually sets cookies (Application tab → Cookies), and confirm
-  `COOKIE_SAMESITE=none` is set on the Render service and `CORS_ORIGINS` exactly matches
-  your Netlify URL (scheme + host, no trailing slash, no typos).
+- If login seems to silently fail (e.g. `/auth/me` returns 401 even right after logging
+  in): open browser dev tools → Network tab → check the register/login response actually
+  sets cookies (Application tab → Cookies), and confirm `ENVIRONMENT=production` is set on
+  the Render service (this alone makes cookies `SameSite=None`; see above) and
+  `CORS_ORIGINS` exactly matches your Netlify URL (scheme + host, no trailing slash, no
+  typos).
 
 ## Custom domains later
 

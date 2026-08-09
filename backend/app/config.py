@@ -14,11 +14,11 @@ class Settings(BaseSettings):
     # included) commonly use FRONTEND_URL by convention. If set, it's added to whatever
     # CORS_ORIGINS already has rather than replacing it, so either name (or both) works.
     frontend_url: str = ""
-    # "lax" for same-origin deployments (a VPS behind one nginx, or local dev via the Vite
-    # proxy). Set to "none" when the frontend and backend are on different domains (e.g.
-    # Netlify + Render) — cross-site cookies require SameSite=None, and browsers require
-    # Secure whenever SameSite=None, which is already forced on by ENVIRONMENT=production.
-    cookie_samesite: str = "lax"
+    # Explicit override only. Leave unset in normal deployments — cookie_samesite_effective
+    # below derives the right value from `environment` automatically, so a cross-domain
+    # deployment (Netlify + Render) doesn't silently break just because this one extra env
+    # var was never set alongside ENVIRONMENT=production.
+    cookie_samesite: str | None = None
 
     database_url: str = "postgresql+asyncpg://ase_ai:changeme@localhost:5432/ase_ai"
 
@@ -39,6 +39,17 @@ class Settings(BaseSettings):
     max_image_size_mb: int = 10
     max_document_size_mb: int = 20
     max_attachments_per_message: int = 5
+
+    @property
+    def cookie_samesite_effective(self) -> str:
+        # "lax" works for same-origin deployments (a VPS behind one nginx, or local dev via
+        # the Vite proxy). "none" is required once frontend and backend are on different
+        # domains (Netlify + Render) — otherwise the browser drops the auth cookie on every
+        # cross-site request, which looks like a 401 on /auth/me even right after a
+        # successful login. Explicit COOKIE_SAMESITE still wins if someone sets it.
+        if self.cookie_samesite:
+            return self.cookie_samesite
+        return "none" if self.environment == "production" else "lax"
 
     @property
     def cors_origin_list(self) -> list[str]:

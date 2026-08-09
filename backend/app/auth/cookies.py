@@ -11,7 +11,7 @@ def _secure() -> bool:
 
 
 def _samesite() -> str:
-    return settings.cookie_samesite
+    return settings.cookie_samesite_effective
 
 
 def set_auth_cookies(response: Response, access_token: str, refresh_token: str, csrf_token: str) -> None:

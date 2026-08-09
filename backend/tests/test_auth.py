@@ -33,6 +33,28 @@ async def test_cookie_samesite_is_configurable_for_cross_site_deployments(client
     assert all("samesite=none" in h.lower() for h in set_cookie_headers)
 
 
+async def test_cookie_samesite_defaults_to_none_in_production_without_explicit_override(client, monkeypatch):
+    # COOKIE_SAMESITE is easy to forget as a separate Render env var — this is the actual
+    # fix: ENVIRONMENT=production alone (already required for Secure cookies) is enough to
+    # get the cross-domain-safe SameSite=None default, no second env var required.
+    monkeypatch.setattr("app.auth.cookies.settings.cookie_samesite", None)
+    monkeypatch.setattr("app.auth.cookies.settings.environment", "production")
+    response = await client.post(
+        "/api/v1/auth/register",
+        json={
+            "full_name": "Prod Default",
+            "username": "proddefault",
+            "email": "proddefault@example.com",
+            "password": "correcthorse1",
+            "confirm_password": "correcthorse1",
+            "date_of_birth": "1990-01-01",
+        },
+    )
+    set_cookie_headers = response.headers.get_list("set-cookie")
+    assert set_cookie_headers, "expected Set-Cookie headers on register"
+    assert all("samesite=none" in h.lower() for h in set_cookie_headers)
+
+
 async def test_register_exposes_csrf_token_via_response_header(client):
     # This is the actual fix: on a cross-domain deployment (Netlify + Render), frontend JS
     # can never read the CSRF cookie directly (its Domain belongs to the backend's host) —
