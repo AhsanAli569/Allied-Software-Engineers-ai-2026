@@ -4,10 +4,11 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.cookies import clear_auth_cookies, set_auth_cookies
-from app.auth.csrf import verify_csrf
+from app.auth.cookies import clear_auth_cookies, set_auth_cookies, set_csrf_cookie
+from app.auth.csrf import CSRF_HEADER, verify_csrf
 from app.auth.dependencies import get_client_ip, get_current_user
 from app.auth.security import (
+    CSRF_COOKIE,
     REFRESH_TOKEN_COOKIE,
     as_aware_utc,
     create_access_token,
@@ -42,6 +43,12 @@ async def _issue_session(db: AsyncSession, response: Response, user: User, reque
     access_token = create_access_token(user.id, user.role.value)
     csrf_token = generate_csrf_token()
     set_auth_cookies(response, access_token, raw_refresh, csrf_token)
+    # The CSRF cookie's Domain defaults to this API's own host — when the frontend lives on
+    # a completely different registrable domain (Netlify + Render, not just a different
+    # port/subdomain), `document.cookie` on the frontend can never read it; that's browser
+    # cookie isolation, unrelated to SameSite. Exposing it as a response header too lets the
+    # frontend capture it in memory instead (see CORS `expose_headers` in main.py).
+    response.headers[CSRF_HEADER] = csrf_token
 
 
 @router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
@@ -63,6 +70,7 @@ async def register(
         username=payload.username,
         email=payload.email,
         password_hash=hash_password(payload.password),
+        date_of_birth=payload.date_of_birth,
     )
     db.add(user)
     await db.flush()
@@ -168,3 +176,25 @@ async def logout_all(
 @router.get("/me", response_model=UserRead)
 async def me(user: User = Depends(get_current_user)) -> User:
     return user
+
+
+@router.get("/csrf")
+async def get_csrf_token(
+    request: Request,
+    response: Response,
+    _user: User = Depends(get_current_user),
+) -> dict:
+    """Re-exposes the current session's CSRF token via a response header. The frontend
+    calls this once after confirming a session exists (e.g. on app load, after /me
+    succeeds) to repopulate its in-memory copy — the in-memory value from login/register
+    doesn't survive a page reload, and the cross-domain cookie can't be read directly by
+    frontend JS (see the note in _issue_session above). Safe method — no CSRF check needed,
+    and it doesn't rotate the session; it just reads back whatever cookie the browser
+    already sent (minting a new one only if it's somehow missing).
+    """
+    token = request.cookies.get(CSRF_COOKIE)
+    if not token:
+        token = generate_csrf_token()
+        set_csrf_cookie(response, token)
+    response.headers[CSRF_HEADER] = token
+    return {"status": "ok"}

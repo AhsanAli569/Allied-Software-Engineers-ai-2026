@@ -15,7 +15,7 @@ export default function MessageBubble({ message, onRegenerate, isLatestAssistant
   }
 
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+    <div className={`flex animate-fade-slide-up ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div className={`max-w-[85%] sm:max-w-[75%] ${isUser ? '' : 'w-full'}`}>
         {message.attachments?.length > 0 && (
           <AttachmentList attachments={message.attachments} align={isUser ? 'end' : 'start'} />
@@ -24,8 +24,8 @@ export default function MessageBubble({ message, onRegenerate, isLatestAssistant
         <div
           className={
             isUser
-              ? 'rounded-2xl bg-emerald px-4 py-2.5 text-sm text-white'
-              : 'rounded-2xl bg-card px-4 py-2.5 text-sm text-charcoal dark:bg-white/10 dark:text-slate-100'
+              ? 'rounded-2xl bg-emerald px-4 py-2.5 text-sm text-white shadow-sm transition-shadow'
+              : 'rounded-2xl bg-card px-4 py-2.5 text-sm text-charcoal shadow-sm transition-shadow dark:bg-white/10 dark:text-slate-100'
           }
         >
           {isUser ? (
@@ -43,11 +43,14 @@ export default function MessageBubble({ message, onRegenerate, isLatestAssistant
 
         {hasCopyableContent && message.status !== 'streaming' && (
           <div className={`mt-1 flex items-center gap-3 px-1 text-xs text-muted ${isUser ? 'justify-end' : ''}`}>
-            <button onClick={handleCopy} className={copied ? 'text-success' : 'hover:text-emerald dark:hover:text-mint'}>
+            <button
+              onClick={handleCopy}
+              className={`transition-colors duration-150 ${copied ? 'text-success' : 'hover:text-emerald dark:hover:text-mint'}`}
+            >
               {copied ? 'Copied ✓' : 'Copy'}
             </button>
             {!isUser && isLatestAssistant && (
-              <button onClick={onRegenerate} className="hover:text-emerald dark:hover:text-mint">
+              <button onClick={onRegenerate} className="transition-colors duration-150 hover:text-emerald dark:hover:text-mint">
                 Regenerate
               </button>
             )}
@@ -61,7 +64,7 @@ export default function MessageBubble({ message, onRegenerate, isLatestAssistant
 function Dot({ delay = '0ms' }) {
   return (
     <span
-      className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400"
+      className="h-1.5 w-1.5 animate-bounce rounded-full bg-emerald dark:bg-mint"
       style={{ animationDelay: delay }}
     />
   )

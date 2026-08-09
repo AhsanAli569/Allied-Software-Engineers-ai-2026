@@ -19,7 +19,7 @@ export default function ConversationItem({ conversation, isActive, onUpdate, onD
 
   return (
     <div
-      className={`group flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm ${
+      className={`group flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm transition-colors duration-150 ${
         isActive ? 'bg-emerald text-white' : 'text-slate-300 hover:bg-white/10'
       }`}
     >

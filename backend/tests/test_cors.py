@@ -57,3 +57,23 @@ async def test_options_preflight_is_not_blocked_by_csrf_or_auth(client):
         },
     )
     assert response.headers.get("access-control-allow-origin") == ALLOWED_ORIGIN
+
+
+async def test_csrf_token_response_header_is_exposed_cross_origin(client):
+    # Custom response headers are invisible to cross-origin JS (response.headers.get(...))
+    # unless the server explicitly exposes them — without this, the frontend could
+    # capture the X-CSRF-Token header server-side but JS would never actually see it.
+    response = await client.post(
+        "/api/v1/auth/register",
+        json={
+            "full_name": "Expose Header",
+            "username": "exposeheader",
+            "email": "exposeheader@example.com",
+            "password": "correcthorse1",
+            "confirm_password": "correcthorse1",
+            "date_of_birth": "1990-01-01",
+        },
+        headers={"Origin": ALLOWED_ORIGIN},
+    )
+    exposed = response.headers.get("access-control-expose-headers", "")
+    assert "x-csrf-token" in exposed.lower()

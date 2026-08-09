@@ -35,6 +35,60 @@ body {
   scrollbar-width: thin;
 }
 
+@keyframes fade-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes gradient-pan {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes soft-glow {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.08);
+  }
+}
+
+.animate-fade-slide-up {
+  animation: fade-slide-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-gradient-pan {
+  background-size: 200% 200%;
+  animation: gradient-pan 8s ease-in-out infinite;
+}
+
+.animate-soft-glow {
+  animation: soft-glow 3.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-slide-up,
+  .animate-gradient-pan,
+  .animate-soft-glow {
+    animation: none;
+  }
+}
+
 .markdown-body pre {
   @apply overflow-x-auto rounded-lg bg-navy p-3 text-sm text-slate-100 dark:bg-emerald-deep/40;
 }

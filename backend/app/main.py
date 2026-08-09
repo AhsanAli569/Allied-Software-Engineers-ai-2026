@@ -44,6 +44,10 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    # Custom response headers are invisible to cross-origin JS (response.headers.get(...))
+    # unless explicitly exposed — without this, the frontend could never read the
+    # X-CSRF-Token header that auth endpoints send back (see api/v1/auth.py).
+    expose_headers=["X-CSRF-Token"],
 )
 
 register_error_handlers(app)

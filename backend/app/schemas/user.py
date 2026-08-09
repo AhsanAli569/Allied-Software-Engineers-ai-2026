@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict
 
@@ -13,5 +13,6 @@ class UserRead(BaseModel):
     full_name: str
     username: str
     email: str
+    date_of_birth: date | None
     role: UserRole
     created_at: datetime

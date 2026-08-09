@@ -10,7 +10,19 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     api
       .get('/auth/me')
-      .then(setUser)
+      .then(async (loggedInUser) => {
+        setUser(loggedInUser)
+        // A page reload loses the in-memory CSRF token captured at login (and on a
+        // cross-domain deployment the cookie itself isn't readable by frontend JS — see
+        // lib/api.js) — this repopulates it so the first state-changing request after a
+        // reload doesn't fail CSRF. Best-effort: if it fails, the first actual mutation
+        // will just 403 and the user can retry, so no need to block on it.
+        try {
+          await api.get('/auth/csrf')
+        } catch {
+          // ignore — see comment above
+        }
+      })
       .catch(() => setUser(null))
       .finally(() => setLoading(false))
   }, [])

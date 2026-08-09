@@ -17,6 +17,11 @@ export default function AttachmentList({ attachments, align = 'start' }) {
             <img
               src={attachmentContentUrl(conversationId, attachment.id)}
               alt={attachment.original_filename}
+              // Explicit even though plain <img> tags already send SameSite=None cookies
+              // by default (unlike fetch/XHR, which need credentials:'include' —
+              // browsers never applied that restriction to tag-based resource loads).
+              // This makes the CORS check strict/explicit instead of silently opaque.
+              crossOrigin="use-credentials"
               className="h-28 w-28 rounded-lg object-cover ring-1 ring-slate-200 dark:ring-white/15"
             />
           </a>

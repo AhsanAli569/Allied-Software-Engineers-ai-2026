@@ -1,4 +1,4 @@
-import { API_BASE, readCookie } from './api'
+import { API_BASE, captureCsrfTokenFromResponse, getCsrfToken } from './api'
 
 /**
  * Streams a Server-Sent-Events response from a POST endpoint. The browser's built-in
@@ -8,7 +8,7 @@ import { API_BASE, readCookie } from './api'
  */
 export async function streamMessage(path, body, { onStart, onChunk, onDone, onError, signal } = {}) {
   const headers = { 'Content-Type': 'application/json' }
-  const csrfToken = readCookie('ase_csrf_token')
+  const csrfToken = getCsrfToken()
   if (csrfToken) headers['X-CSRF-Token'] = csrfToken
 
   let response
@@ -25,6 +25,8 @@ export async function streamMessage(path, body, { onStart, onChunk, onDone, onEr
     onError?.('Could not reach ASE AI. Check your connection and try again.')
     return
   }
+
+  captureCsrfTokenFromResponse(response)
 
   if (!response.ok || !response.body) {
     onError?.('ASE AI is temporarily unable to answer. Please try again.')

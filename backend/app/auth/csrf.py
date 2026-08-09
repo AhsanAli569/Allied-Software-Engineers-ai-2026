@@ -2,7 +2,10 @@ from fastapi import HTTPException, Request, status
 
 from app.auth.security import CSRF_COOKIE
 
-CSRF_HEADER = "X-CSRF-Token"
+CSRF_HEADER = "X-CSRF-Token"  # used both directions: client sends it on requests, and
+# the backend also sends it back on responses that mint/rotate a token (see auth.py) so
+# frontend JS can capture it even when it can't read the cookie directly (cross-domain
+# deployments — see the note in api/v1/auth.py::_issue_session).
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 
 

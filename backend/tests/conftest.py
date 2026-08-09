@@ -59,13 +59,16 @@ def csrf_headers(client: httpx.AsyncClient) -> dict:
     return {"X-CSRF-Token": token} if token else {}
 
 
-async def register_and_login(client: httpx.AsyncClient, *, username="alice", email="alice@example.com") -> dict:
+async def register_and_login(
+    client: httpx.AsyncClient, *, username="alice", email="alice@example.com", date_of_birth="1990-01-01"
+) -> dict:
     payload = {
         "full_name": "Alice Example",
         "username": username,
         "email": email,
         "password": "correcthorse1",
         "confirm_password": "correcthorse1",
+        "date_of_birth": date_of_birth,
     }
     response = await client.post("/api/v1/auth/register", json=payload)
     assert response.status_code == 201, response.text

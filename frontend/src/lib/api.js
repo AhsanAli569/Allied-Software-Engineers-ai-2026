@@ -12,10 +12,29 @@ function resolveApiBase() {
 }
 
 const API_BASE = resolveApiBase()
+const CSRF_HEADER = 'X-CSRF-Token'
 
 function readCookie(name) {
   const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`))
   return match ? decodeURIComponent(match[1]) : null
+}
+
+// The CSRF cookie's Domain belongs to the *backend's* host. When the frontend and backend
+// are on different registrable domains (Netlify + Render, not just different ports),
+// document.cookie on the frontend can never read it — that's browser cookie isolation, not
+// a SameSite issue. The backend also echoes the token back via the X-CSRF-Token response
+// header on auth endpoints (see backend app/api/v1/auth.py); this in-memory value is that
+// captured copy. Falls back to the cookie for same-origin deployments (VPS/local dev),
+// where reading it directly still works fine and this may not be populated yet.
+let inMemoryCsrfToken = null
+
+function getCsrfToken() {
+  return inMemoryCsrfToken || readCookie('ase_csrf_token')
+}
+
+function captureCsrfTokenFromResponse(response) {
+  const token = response.headers.get(CSRF_HEADER)
+  if (token) inMemoryCsrfToken = token
 }
 
 class ApiError extends Error {
@@ -33,8 +52,8 @@ class ApiError extends Error {
 async function request(path, { method = 'GET', body, signal } = {}) {
   const headers = { 'Content-Type': 'application/json' }
   if (method !== 'GET' && method !== 'HEAD') {
-    const csrfToken = readCookie('ase_csrf_token')
-    if (csrfToken) headers['X-CSRF-Token'] = csrfToken
+    const csrfToken = getCsrfToken()
+    if (csrfToken) headers[CSRF_HEADER] = csrfToken
   }
 
   const response = await fetch(`${API_BASE}${path}`, {
@@ -44,6 +63,8 @@ async function request(path, { method = 'GET', body, signal } = {}) {
     body: body !== undefined ? JSON.stringify(body) : undefined,
     signal,
   })
+
+  captureCsrfTokenFromResponse(response)
 
   if (response.status === 204) return null
 
@@ -67,14 +88,17 @@ function uploadFile(path, file, onProgress) {
     const xhr = new XMLHttpRequest()
     xhr.open('POST', `${API_BASE}${path}`)
     xhr.withCredentials = true
-    const csrfToken = readCookie('ase_csrf_token')
-    if (csrfToken) xhr.setRequestHeader('X-CSRF-Token', csrfToken)
+    const csrfToken = getCsrfToken()
+    if (csrfToken) xhr.setRequestHeader(CSRF_HEADER, csrfToken)
 
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable) onProgress?.(Math.round((event.loaded / event.total) * 100))
     }
 
     xhr.onload = () => {
+      const headerToken = xhr.getResponseHeader(CSRF_HEADER)
+      if (headerToken) inMemoryCsrfToken = headerToken
+
       let data = null
       try {
         data = JSON.parse(xhr.responseText)
@@ -103,4 +127,4 @@ export const api = {
   uploadFile,
 }
 
-export { ApiError, readCookie, API_BASE }
+export { ApiError, readCookie, getCsrfToken, captureCsrfTokenFromResponse, API_BASE }

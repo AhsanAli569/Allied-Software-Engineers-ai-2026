@@ -64,7 +64,7 @@ export default function Composer({ onSend, onStop, isGenerating, attachments, on
         )}
 
         <div
-          className={`flex items-end gap-2 rounded-2xl border bg-white p-2 focus-within:border-mint dark:bg-white/5 ${
+          className={`flex items-end gap-2 rounded-2xl border bg-white p-2 transition-colors duration-150 focus-within:border-mint dark:bg-white/5 ${
             dragOver ? 'border-mint border-dashed' : 'border-slate-300 dark:border-white/15'
           }`}
         >
@@ -78,7 +78,7 @@ export default function Composer({ onSend, onStop, isGenerating, attachments, on
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="shrink-0 rounded-full p-2 text-muted hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/10"
+            className="shrink-0 rounded-full p-2 text-muted transition-colors hover:bg-slate-100 hover:text-emerald dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-mint"
             aria-label="Attach image or document"
             type="button"
           >
@@ -97,7 +97,7 @@ export default function Composer({ onSend, onStop, isGenerating, attachments, on
           {isGenerating ? (
             <button
               onClick={onStop}
-              className="shrink-0 rounded-full bg-navy p-2 text-white hover:bg-emerald-deep dark:bg-white/15 dark:hover:bg-white/25"
+              className="shrink-0 animate-pulse rounded-full bg-navy p-2 text-white transition-colors hover:bg-emerald-deep dark:bg-white/15 dark:hover:bg-white/25"
               aria-label="Stop generating"
             >
               <StopIcon />
@@ -106,7 +106,7 @@ export default function Composer({ onSend, onStop, isGenerating, attachments, on
             <button
               onClick={handleSend}
               disabled={!canSend}
-              className="shrink-0 rounded-full bg-mint p-2 text-navy hover:bg-mint-dark disabled:bg-slate-200 disabled:text-slate-400 dark:disabled:bg-white/10 dark:disabled:text-slate-500"
+              className="shrink-0 rounded-full bg-mint p-2 text-navy transition-all duration-150 hover:bg-mint-dark hover:shadow-md active:scale-90 disabled:bg-slate-200 disabled:text-slate-400 disabled:hover:shadow-none dark:disabled:bg-white/10 dark:disabled:text-slate-500"
               aria-label="Send message"
             >
               <SendIcon />
