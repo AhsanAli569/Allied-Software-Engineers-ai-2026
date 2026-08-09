@@ -34,6 +34,7 @@ export default function ChatPage() {
   const [attachments, setAttachments] = useState([])
   const abortRef = useRef(null)
   const activeMessageIdRef = useRef(null)
+  const skipNextFetchRef = useRef(false)
 
   const refreshConversations = useCallback(async (searchTerm) => {
     const list = await api.get(`/conversations${searchTerm ? `?search=${encodeURIComponent(searchTerm)}` : ''}`)
@@ -55,10 +56,25 @@ export default function ChatPage() {
       setMessages([])
       return
     }
+    // A conversation we just created client-side (see ensureConversation) has no messages
+    // on the server yet — fetching here would race the optimistic user message/streaming
+    // reply about to be added locally and, if it resolves second, wipe them back to [].
+    if (skipNextFetchRef.current) {
+      skipNextFetchRef.current = false
+      return
+    }
+    let stale = false
     api
       .get(`/conversations/${conversationId}/messages`)
-      .then((data) => setMessages(dedupeMessages(data)))
-      .catch(() => setMessages([]))
+      .then((data) => {
+        if (!stale) setMessages(dedupeMessages(data))
+      })
+      .catch(() => {
+        if (!stale) setMessages([])
+      })
+    return () => {
+      stale = true
+    }
   }, [conversationId])
 
   const runGeneration = (path, body) => {
@@ -111,6 +127,7 @@ export default function ChatPage() {
     if (conversationId) return conversationId
     const conversation = await api.post('/conversations', {})
     setConversations((prev) => [conversation, ...prev])
+    skipNextFetchRef.current = true
     navigate(`/chat/${conversation.id}`, { replace: true })
     return conversation.id
   }
