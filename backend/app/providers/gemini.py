@@ -14,6 +14,7 @@ from app.providers.exceptions import (
 )
 
 BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
+DEFAULT_EMBEDDING_MODEL = "text-embedding-004"
 
 
 def _message_parts(message: ChatMessage) -> list[dict]:
@@ -119,6 +120,20 @@ class GeminiProvider(AIProvider):
         except ProviderAuthError:
             raise
         except (ProviderRateLimitError, ProviderTimeoutError, ProviderUnavailableError):
+            raise
+        except Exception as exc:
+            raise _map_error(exc, self.name) from exc
+
+    async def embeddings(self, text: str, model: str = DEFAULT_EMBEDDING_MODEL) -> list[float]:
+        key = self._require_key()
+        try:
+            response = await self._client.post(
+                f"{BASE_URL}/models/{model}:embedContent?key={key}",
+                json={"content": {"parts": [{"text": text}]}},
+            )
+            response.raise_for_status()
+            return response.json()["embedding"]["values"]
+        except ProviderAuthError:
             raise
         except Exception as exc:
             raise _map_error(exc, self.name) from exc

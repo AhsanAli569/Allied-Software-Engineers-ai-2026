@@ -23,10 +23,12 @@ from app.models.message import Message, MessageRole, MessageStatus
 from app.models.user import User
 from app.providers.base import ChatMessage, ImagePart
 from app.providers.exceptions import AllProvidersExhaustedError, ProviderMidStreamError
+from app.providers.factory import get_provider
 from app.providers.router import stream_chat_with_fallback
 from app.schemas.message import MessageRead, SendMessageRequest
 from app.security.sanitize import normalize_user_content
 from app.services.conversation_service import get_owned_conversation
+from app.services.knowledge_service import augment_with_business_knowledge
 from app.services.message_service import build_context_messages, get_routing_candidates
 from app.services.title_service import generate_title_from_message
 from app.storage.local import read_file
@@ -240,6 +242,7 @@ async def send_message(
     await db.refresh(user_message)
 
     context = await build_context_messages(db, conversation.id)
+    await augment_with_business_knowledge(db, get_provider("gemini"), context)
     require_vision = await _augment_last_message_with_attachments(context, attachments)
 
     return StreamingResponse(
@@ -284,6 +287,7 @@ async def regenerate_message(
 
     # Context excludes the response being replaced and anything after it.
     context = await build_context_messages(db, conversation.id, before=original.created_at)
+    await augment_with_business_knowledge(db, get_provider("gemini"), context)
 
     require_vision = False
     if prior_user_message:
